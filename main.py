@@ -1,4 +1,6 @@
+from genericpath import isfile
 from gettext import npgettext
+from ntpath import join
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
@@ -18,6 +20,7 @@ class Application:
         self.root.configure(background="#dde")
 
         self.image_selected = None
+        self.shades_of_gray = 32    #valor padrão para a quantidade de tons de cinza das imagens
 
         self.main_menu()
         self.root.mainloop()
@@ -27,7 +30,7 @@ class Application:
             ('PNG Files', '*.png'),
             ('JPG Files', '*.jpg')
         )
-        #filename = filedialog.askopenfilename(filetypes=file_types)
+        #retorna o nome do arquivo que cliquei para abrir
         self.file_name=filedialog.askopenfilename(title='Open an image', filetypes=file_types, initialdir=os.path.normpath("Imagens/"))
         print(self.file_name)
         frame = Frame(self.root, width=128, height=128)
@@ -48,12 +51,6 @@ class Application:
         #retorna o nome do arquivo que cliquei para abrir
         #self.file_selected = filedialog.askopenfilename(title='Open an image', initialdir=os.path.normpath("Imagens/"))
         #self.open_selected_file()
-        '''
-        showinfo(
-            title='Teste'
-            message='Mensagem Teste'
-        )
-        '''
 
     def descriptors(self):
         if self.image_selected is None:
@@ -62,34 +59,67 @@ class Application:
                 message='É preciso que uma imagem seja selecionada para a realização dos cálculos dos descritores.'
             )
         
-        raios = [1, 2, 4, 8, 16] 
-        angles = [0, np.pi/4, np.pi/2, 3*np.pi/4, np.pi, 5*np.pi/4, 3*np.pi/2, 7*np.pi/4]
+        #Reamostrar o número de tons de cinza da imagem
+        resample_ratio = int(round(255 / self.shades_of_gray))
+        np_img = np.round(np.array(self.image_selected) / resample_ratio).astype(np.uint8)
 
-        im1 = self.image_selected.quantize(32)
+        raios = [1, 2, 4, 8, 16]
 
-        np_img = np.array(im1, dtype=np.uint8)
-        #print(np_img)
+        #angles = [0, np.pi/2, np.pi, 5*np.pi/4, 3*np.pi/2]
+        #angles = [0, np.pi/4, np.pi/2, 3*np.pi/4, np.pi, 5*np.pi/4, 3*np.pi/2, 7*np.pi/4]
 
-        glcm = graycomatrix(np_img, 
-                    distances=raios, 
-                    angles=angles)
+        #im1 = self.image_selected.quantize(8)
 
-        #print(glcm)
-        #print(glcm.shape)
+        #np_img = np.array(im1).astype(np.uint8)
 
-        properties = ['contrast', 'energy', 'homogeneity', 'correlation', 'dissimilarity']
-        contrast = graycoprops(glcm, properties[0]).mean(axis=1)
-        energy = graycoprops(glcm, properties[1]).mean(axis=1)
-        homogeneity = graycoprops(glcm, properties[2]).mean(axis=1)
-        correlation = graycoprops(glcm, properties[3]).mean(axis=1)
-        dissimilarity = graycoprops(glcm, properties[4]).mean(axis=1)
-        print(contrast)
-        print(contrast.mean(axis=0))
-        print(energy.mean(axis=0))
-        print(homogeneity.mean(axis=0))
-        print(correlation.mean(axis=0))
-        print(dissimilarity.mean(axis=0))
+        num_of_haralick_descriptors = 13
+        haralick_descriptors_for_all_radii: np.ndarray = np.empty(
+            shape=(len(raios), num_of_haralick_descriptors))
 
+        for i in range(len(raios)):
+            haralick_descriptors: np.ndarray = np.array(mahotas.features.haralick(
+                np_img, distance=raios[i]
+            ))
+            haralick_descriptors = haralick_descriptors.mean(axis=0)  # Mean of each column
+            haralick_descriptors_for_all_radii[i] = haralick_descriptors
+
+        print(haralick_descriptors_for_all_radii.mean(axis=0))
+        #return haralick_descriptors_for_all_radii.mean(axis=0)  # Mean of each column
+
+    def read_directory(self):
+        path1 = 'Imagens/1/'
+        path2 = 'Imagens/2/'
+        path3 = 'Imagens/3/'
+        path4 = 'Imagens/4/'
+
+        self.dataset1 = list()
+        self.dataset2 = list()
+        self.dataset3 = list()
+        self.dataset4 = list()
+
+        #Criando um dataset de imagens para cada um dos BIRADS
+        for file in os.listdir(path1):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                self.dataset1.append(Image.open(path1+file))
+
+        for file in os.listdir(path2):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                self.dataset2.append(Image.open(path2+file))
+
+        for file in os.listdir(path3):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                self.dataset3.append(Image.open(path3+file))
+
+        for file in os.listdir(path4):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                self.dataset4.append(Image.open(path4+file))
+
+        #files1 = [file for file in os.listdir(path1) if isfile(join(path1, file))]
+        #print(dataset1[:20])
+        #print(len(dataset1))
+
+    def train_classifier(self):
+        pass
 
     def main_menu(self):
         self.menu_bar = Menu(self.root) 
@@ -103,8 +133,8 @@ class Application:
 
         self.options = Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label='Opções', menu = self.options)
-        self.options.add_command(label='Ler diretório de imagens de treino/teste', command=None)
-        self.options.add_command(label='Treinar Classificador', command=None)
+        self.options.add_command(label='Ler diretório de imagens de treino/teste', command=self.read_directory)
+        self.options.add_command(label='Treinar Classificador', command=self.train_classifier)
         self.options.add_command(label='Calcular e exibir características para imagem visualizada', command=self.descriptors)
         self.options.add_command(label='Classificar imagem', command=None)
 
