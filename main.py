@@ -15,11 +15,10 @@ class Application:
         self.root.geometry('500x500')
         self.root.configure(background="#dde")
 
+        self.image_selected = None
+
         self.main_menu()
         self.root.mainloop()
-
-    def open_selected_file(self):
-        pass
 
     def open_file(self):
         file_types = (
@@ -34,8 +33,8 @@ class Application:
         frame.place(anchor='center', relx=0.5, rely=0.5)
 
         #Criando um objeto tkinter ImageTk
-        image_selected = Image.open(self.file_name)
-        image = ImageTk.PhotoImage(image_selected)
+        self.image_selected = Image.open(self.file_name)
+        image = ImageTk.PhotoImage(self.image_selected)
 
         #Criando um Label Widget para mostrar a imagem
         label = Label(frame, image = image)
@@ -54,8 +53,16 @@ class Application:
         )
         '''
 
-    def descritores(self):
-        pass
+    def descriptors(self):
+        if self.image_selected is None:
+            showinfo(
+                title='Nenhuma imagem selecionada',
+                message='É preciso que uma imagem seja selecionada para a realização dos cálculos dos descritores.'
+            )
+        
+        raios = [1, 2, 4, 8, 16] 
+        
+
 
     def main_menu(self):
         self.menu_bar = Menu(self.root) 
@@ -71,7 +78,7 @@ class Application:
         self.menu_bar.add_cascade(label='Opções', menu = self.options)
         self.options.add_command(label='Ler diretório de imagens de treino/teste', command=None)
         self.options.add_command(label='Treinar Classificador', command=None)
-        self.options.add_command(label='Calcular e exibir características para imagem visualizada', command=self.descritores)
+        self.options.add_command(label='Calcular e exibir características para imagem visualizada', command=self.descriptors)
         self.options.add_command(label='Classificar imagem', command=None)
 
 Application()
