@@ -9,8 +9,10 @@ from tkinter.messagebox import showinfo
 from PIL import ImageTk, Image
 import os
 import mahotas
+from matplotlib.pyplot import axis
 # import cv2
 import numpy as np
+import pandas as pd
 from skimage.feature import graycomatrix, graycoprops
 
 
@@ -57,7 +59,8 @@ class Application:
             label='Treinar Classificador', command=self.train_classifier)
         self.options.add_command(
             label='Calcular e exibir características para imagem visualizada', command=self.get_descriptors_from_selected_image)
-        self.options.add_command(label='Classificar imagem', command=None)
+        self.options.add_command(
+            label='Classificar imagem', command=None)
 
     def open_file(self):
         file_types = (
@@ -93,6 +96,11 @@ class Application:
         path3 = 'Imagens/3/'
         path4 = 'Imagens/4/'
 
+        showinfo(
+                title='Lendo diretórios...',
+                message='Aguarde enquanto a leitura do diretório de imagens de treino/teste é efetuada.'
+            )
+
         # Criando um dataset de imagens para cada um dos BIRADS
         for file in os.listdir(path1):
             if file.endswith(".png") or file.endswith(".jpg"):
@@ -114,8 +122,27 @@ class Application:
                 self.images_birads_4.append(
                     ImageDescriptor(Image.open(path4+file), [], 4))
 
+        showinfo(
+                title='Leitura de diretórios efetuada',
+                message='A leitura do diretório de imagens foi efetuada com sucesso!'
+            )
+
     def train_classifier(self):
+        #Criando um numpy array vazio que será preenchido com os descritores de haralick de cada imagem
+        self.dataset = np.empty(shape=(0, 13))
+        #Criando uma lista que será preenchida com os birads de cada 
+        '''
+        O dataset e o dataset_target_column serão unidos em um dataframe:
+        Variáveis de entrada do dataframe: descritores de haralick
+        Variável de saída: birads da imagem que apresenta aquele determinado valor para os descritores
+        ''' 
+        self.dataset_target_column = list()
         self.calculate_descriptors_all_images()
+        #print(self.dataset.shape)
+        #print(len(self.dataset_target_column))
+        #print(self.dataset_target_column[0:10])
+        #print(self.dataset[:10])
+        self.generate_dataset()
 
     def calculate_descriptors_all_images(self):
         self.calculate_descriptors_for_images(self.images_birads_1)
@@ -127,6 +154,12 @@ class Application:
         for imagesDescriptor in imagesDescriptors:
             imagesDescriptor.descriptors = self.get_descriptors_from_image(
                 imagesDescriptor.image)
+            #self.dataset = np.append(self.dataset, [imagesDescriptor.descriptors], axis=0)
+            self.dataset = np.vstack([self.dataset, imagesDescriptor.descriptors])
+            self.dataset_target_column.append(imagesDescriptor.birads)
+
+    def generate_dataset():
+        pass
 
     def get_descriptors_from_selected_image(self):
         if self.image_selected is None:
@@ -138,6 +171,7 @@ class Application:
         print(self.get_descriptors_from_image(self.image_selected))
 
     def get_descriptors_from_image(self, image):
+        #Reamostrando o número de tons de cinza da imagem
         resample_ratio = int(round(255 / self.shades_of_gray))
         np_img = np.round(np.array(image) / resample_ratio).astype(np.uint8)
 
