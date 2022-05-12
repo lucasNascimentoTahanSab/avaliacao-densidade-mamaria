@@ -8,6 +8,8 @@ from tkinter import filedialog
 from tkinter.messagebox import showinfo
 from PIL import ImageTk, Image
 import os
+
+from requests import head
 import mahotas
 from matplotlib.pyplot import axis
 # import cv2
@@ -128,38 +130,52 @@ class Application:
             )
 
     def train_classifier(self):
-        #Criando um numpy array vazio que será preenchido com os descritores de haralick de cada imagem
-        self.dataset = np.empty(shape=(0, 13))
-        #Criando uma lista que será preenchida com os birads de cada 
-        '''
-        O dataset e o dataset_target_column serão unidos em um dataframe:
-        Variáveis de entrada do dataframe: descritores de haralick
-        Variável de saída: birads da imagem que apresenta aquele determinado valor para os descritores
-        ''' 
-        self.dataset_target_column = list()
         self.calculate_descriptors_all_images()
-        #print(self.dataset.shape)
-        #print(len(self.dataset_target_column))
-        #print(self.dataset_target_column[0:10])
-        #print(self.dataset[:10])
-        self.generate_dataset()
 
     def calculate_descriptors_all_images(self):
-        self.calculate_descriptors_for_images(self.images_birads_1)
-        self.calculate_descriptors_for_images(self.images_birads_2)
-        self.calculate_descriptors_for_images(self.images_birads_3)
-        self.calculate_descriptors_for_images(self.images_birads_4)
+        cols = ["energy_or_uniformity", 
+            "contrast",
+            "correlation",
+            "variance",
+            "texture_homogeneity",
+            "sum_average",
+            "sum_variance",
+            "sum_entropy",
+            "entropy",
+            "diff_variance",
+            "diff_entropy",
+            "info_measures_of_correlation",
+            "info_measures_of_correlation",
+            "birads"]
+
+        d_birads_1 = self.calculate_descriptors_for_images(self.images_birads_1)
+        df_birads_1 = pd.DataFrame(d_birads_1, columns=cols)
+
+        d_birads_2 = self.calculate_descriptors_for_images(self.images_birads_2)
+        df_birads_2 = pd.DataFrame(d_birads_2, columns=cols)
+
+        d_birads_3 = self.calculate_descriptors_for_images(self.images_birads_3)
+        df_birads_3 = pd.DataFrame(d_birads_3, columns=cols)
+        
+        d_birads_4 = self.calculate_descriptors_for_images(self.images_birads_4)
+        df_birads_4 = pd.DataFrame(d_birads_4, columns=cols)
+
+        df_birads_1.to_csv("birads_1.csv", header=True, index=False)
+        df_birads_2.to_csv("birads_2.csv", header=True, index=False)
+        df_birads_3.to_csv("birads_3.csv", header=True, index=False)
+        df_birads_4.to_csv("birads_4.csv", header=True, index=False)
 
     def calculate_descriptors_for_images(self, imagesDescriptors):
-        for imagesDescriptor in imagesDescriptors:
-            imagesDescriptor.descriptors = self.get_descriptors_from_image(
-                imagesDescriptor.image)
-            #self.dataset = np.append(self.dataset, [imagesDescriptor.descriptors], axis=0)
-            self.dataset = np.vstack([self.dataset, imagesDescriptor.descriptors])
-            self.dataset_target_column.append(imagesDescriptor.birads)
+        imag_descrip = []
 
-    def generate_dataset():
-        pass
+        for imagesDescriptor in imagesDescriptors:
+            imagesDescriptor.descriptors = self.get_descriptors_from_image(imagesDescriptor.image)
+            imagesDescriptor_list = imagesDescriptor.descriptors.tolist()
+            imagesDescriptor_list.append(imagesDescriptor.birads)
+            imag_descrip.append(imagesDescriptor_list)
+        
+        return imag_descrip
+    
 
     def get_descriptors_from_selected_image(self):
         if self.image_selected is None:
