@@ -70,15 +70,19 @@ class Application:
             ('JPG Files', '*.jpg')
         )
         # retorna o nome do arquivo que cliquei para abrir
-        self.file_name = filedialog.askopenfilename(
-            title='Open an image', filetypes=file_types, initialdir=os.path.normpath("Imagens/"))
-        print(self.file_name)
+        self.file_name = filedialog.askopenfilename(title='Open an image', filetypes=file_types, initialdir=os.path.normpath("Imagens/"))
+
+        # Retorna caso nenhuma foto tenha sido escolhida
+        if self.file_name == '' : return
+        
         frame = Frame(self.root, width=128, height=128)
         frame.pack()
         frame.place(anchor='center', relx=0.5, rely=0.5)
 
+
         # Criando um objeto tkinter ImageTk
         self.image_selected = Image.open(self.file_name)
+        
         image = ImageTk.PhotoImage(self.image_selected)
 
         # Criando um Label Widget para mostrar a imagem
@@ -183,6 +187,7 @@ class Application:
                 title='Nenhuma imagem selecionada',
                 message='É preciso que uma imagem seja selecionada para a realização dos cálculos dos descritores.'
             )
+            return
 
         print(self.get_descriptors_from_image(self.image_selected))
 
