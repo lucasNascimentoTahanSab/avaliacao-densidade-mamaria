@@ -136,7 +136,28 @@ class Application:
             )
 
     def train_classifier(self):
+
+        #Checase a lista das imagens se encontra vazia
+        #Caso a lista de imagens esteja vazia, quer dizer que a leitura dos diretórios das imagens não foi efetuada
+        #É necessário realizar a leitura do diretório de imagens antes de treinar o classificador
+        if not self.images_birads_1:
+            showinfo(
+                title='Não é possível treinar o classificador',
+                message='É necessário realizar a leitura do diretório de imagens antes de treinar o classificador.'
+            )
+            return
+
         self.calculate_descriptors_all_images()
+        X_train, y_train, X_test, y_test = self.generate_training_test_sets()
+
+        # clf = svm.SVC()
+        # clf.fit(X_train, y_train)
+        # y_pred = svm.predict(X_test)
+
+        # print(X_train.shape)
+        # print(y_train.shape)
+        # print(X_test.shape)
+        # print(y_test.shape)
 
     def calculate_descriptors_all_images(self):
         cols = ["energy_or_uniformity", 
@@ -155,29 +176,21 @@ class Application:
             "birads"]
 
         d_birads_1 = self.calculate_descriptors_for_images(self.images_birads_1)
-        df_birads_1 = pd.DataFrame(d_birads_1, columns=cols)
-
-        X_birads_1 = df_birads_1.drop(column=['birads'])
-        y_birads_1 = df_birads_1['birads']
-
-        # X_birads_1_train, y_birads_1_train, X_birads_1_test, y_birads_1_test = train_test_split(X_birads_1, y_birads_1, test_size=0.25, random_state=42)
-        # model = svm.SVC()
-        # model.fit(X_birads_1_train, y_birads_1_train)
-        # y_pred = svm.predict(X_birads_1_test)
+        self.df_birads_1 = pd.DataFrame(d_birads_1, columns=cols)
 
         d_birads_2 = self.calculate_descriptors_for_images(self.images_birads_2)
-        df_birads_2 = pd.DataFrame(d_birads_2, columns=cols)
+        self.df_birads_2 = pd.DataFrame(d_birads_2, columns=cols)
 
         d_birads_3 = self.calculate_descriptors_for_images(self.images_birads_3)
-        df_birads_3 = pd.DataFrame(d_birads_3, columns=cols)
+        self.df_birads_3 = pd.DataFrame(d_birads_3, columns=cols)
         
         d_birads_4 = self.calculate_descriptors_for_images(self.images_birads_4)
-        df_birads_4 = pd.DataFrame(d_birads_4, columns=cols)
+        self.df_birads_4 = pd.DataFrame(d_birads_4, columns=cols)
 
-        df_birads_1.to_csv("birads_1.csv", header=True, index=False)
-        df_birads_2.to_csv("birads_2.csv", header=True, index=False)
-        df_birads_3.to_csv("birads_3.csv", header=True, index=False)
-        df_birads_4.to_csv("birads_4.csv", header=True, index=False)
+        self.df_birads_1.to_csv("birads_1.csv", header=True, index=False)
+        self.df_birads_2.to_csv("birads_2.csv", header=True, index=False)
+        self.df_birads_3.to_csv("birads_3.csv", header=True, index=False)
+        self.df_birads_4.to_csv("birads_4.csv", header=True, index=False)
 
     def calculate_descriptors_for_images(self, imagesDescriptors):
         imag_descrip = []
@@ -190,6 +203,37 @@ class Application:
         
         return imag_descrip
     
+    def generate_training_test_sets(self):
+        #X_birads_1 = df_birads_1.drop('birads', axis=1)
+        #y_birads_1 = df_birads_1['birads']
+
+        #X_birads_1_train, y_birads_1_train, X_birads_1_test, y_birads_1_test = train_test_split(X_birads_1, y_birads_1, test_size=0.25, random_state=42)
+
+        #Dividindo os datasets de cada classe em 75% para treino e 25% para teste
+        birads_1_train, birads_1_test = train_test_split(self.df_birads_1, test_size=0.25, random_state=42)
+        birads_2_train, birads_2_test = train_test_split(self.df_birads_2, test_size=0.25, random_state=42)
+        birads_3_train, birads_3_test = train_test_split(self.df_birads_3, test_size=0.25, random_state=42)
+        birads_4_train, birads_4_test = train_test_split(self.df_birads_4, test_size=0.25, random_state=42)
+
+        #Concatenando todos os conjuntos de treino em um único conjunto
+        frames_train = [birads_1_train, birads_2_train, birads_3_train, birads_4_train]
+        df_train = pd.concat(frames_train)
+        #print(df_train.shape)
+
+        #Concatenando todos os conjuntos de teste em um único conjunto
+        frames_test = [birads_1_test, birads_2_test, birads_3_test, birads_4_test]
+        df_test = pd.concat(frames_test)
+        #print(df_test.shape)
+
+        #Dividindo o conjunto de treino em atributos de entrada e saída
+        X_train = df_train.drop('birads', axis=1)   #composta pelas variáveis de entrada da predição
+        y_train = df_train['birads']    #composta pela variável de saída da predição (classe birads)
+
+        #Dividindo o conjunto de teste em atributos de entrada e saída
+        X_test = df_test.drop('birads', axis=1)   #composta pelas variáveis de entrada da predição
+        y_test = df_test['birads']    #composta pela variável de saída da predição (classe birads)
+
+        return X_train, y_train, X_test, y_test
 
     def get_descriptors_from_selected_image(self):
         if self.image_selected is None:
