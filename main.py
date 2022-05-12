@@ -16,6 +16,8 @@ from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
 from skimage.feature import graycomatrix, graycoprops
+from sklearn import svm
+from sklearn.model_selection import train_test_split
 
 
 class ImageDescriptor:
@@ -154,6 +156,14 @@ class Application:
 
         d_birads_1 = self.calculate_descriptors_for_images(self.images_birads_1)
         df_birads_1 = pd.DataFrame(d_birads_1, columns=cols)
+
+        X_birads_1 = df_birads_1.drop(column=['birads'])
+        y_birads_1 = df_birads_1['birads']
+
+        # X_birads_1_train, y_birads_1_train, X_birads_1_test, y_birads_1_test = train_test_split(X_birads_1, y_birads_1, test_size=0.25, random_state=42)
+        # model = svm.SVC()
+        # model.fit(X_birads_1_train, y_birads_1_train)
+        # y_pred = svm.predict(X_birads_1_test)
 
         d_birads_2 = self.calculate_descriptors_for_images(self.images_birads_2)
         df_birads_2 = pd.DataFrame(d_birads_2, columns=cols)
