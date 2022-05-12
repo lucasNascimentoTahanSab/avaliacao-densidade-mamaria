@@ -5,7 +5,7 @@ from ntpath import join
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
-from tkinter.messagebox import showinfo
+from tkinter.messagebox import showinfo, showwarning
 from PIL import ImageTk, Image
 import os
 
@@ -18,6 +18,11 @@ import pandas as pd
 from skimage.feature import graycomatrix, graycoprops
 from sklearn import svm
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import plot_confusion_matrix
+import time
 
 
 class ImageDescriptor:
@@ -34,7 +39,7 @@ class Application:
         self.root.geometry('500x500')
         self.root.configure(background="#dde")
 
-        self.image_selected = None
+        self.selected_image = None
         self.shades_of_gray = 32  # valor padrão para a quantidade de tons de cinza das imagens
 
         self.images_birads_1 = list()
@@ -64,7 +69,7 @@ class Application:
         self.options.add_command(
             label='Calcular e exibir características para imagem visualizada', command=self.get_descriptors_from_selected_image)
         self.options.add_command(
-            label='Classificar imagem', command=None)
+            label='Classificar imagem', command=self.classify_selected_image)
 
     def open_file(self):
         file_types = (
@@ -81,11 +86,10 @@ class Application:
         frame.pack()
         frame.place(anchor='center', relx=0.5, rely=0.5)
 
-
         # Criando um objeto tkinter ImageTk
-        self.image_selected = Image.open(self.file_name)
+        self.selected_image = Image.open(self.file_name)
         
-        image = ImageTk.PhotoImage(self.image_selected)
+        image = ImageTk.PhotoImage(self.selected_image)
 
         # Criando um Label Widget para mostrar a imagem
         label = Label(frame, image=image)
@@ -141,7 +145,7 @@ class Application:
         #Caso a lista de imagens esteja vazia, quer dizer que a leitura dos diretórios das imagens não foi efetuada
         #É necessário realizar a leitura do diretório de imagens antes de treinar o classificador
         if not self.images_birads_1:
-            showinfo(
+            showwarning(
                 title='Não é possível treinar o classificador',
                 message='É necessário realizar a leitura do diretório de imagens antes de treinar o classificador.'
             )
@@ -150,9 +154,33 @@ class Application:
         self.calculate_descriptors_all_images()
         X_train, y_train, X_test, y_test = self.generate_training_test_sets()
 
-        # clf = svm.SVC()
-        # clf.fit(X_train, y_train)
-        # y_pred = svm.predict(X_test)
+        # criando o modelo
+        clf = svm.SVC()
+
+        start_fit_model = time.time()
+        # treinando o classificador com os descritores selecionados, utilizando 75% das imagens escolhidas aleatoriamente,
+        #  balanceadas entre classes
+        clf.fit(X_train, y_train)
+        end_fit_model = time.time()
+
+        fit_time = end_fit_model - start_fit_model
+        print(fit_time)
+
+        start_predict = time.time()
+        # classificando os 25% restantes
+        y_pred = clf.predict(X_test)
+        end_predict = time.time()
+
+        predict_time = end_predict - start_predict 
+        print(predict_time)
+
+        #Gerar matriz de confusão
+        plot_confusion_matrix(clf, X_test, y_test)
+        plt.show()
+        #Acurácia 
+        accuracy = accuracy_score(y_test, y_pred)
+        print(accuracy * 100)
+        #Especificidade média
 
         # print(X_train.shape)
         # print(y_train.shape)
@@ -236,14 +264,14 @@ class Application:
         return X_train, y_train, X_test, y_test
 
     def get_descriptors_from_selected_image(self):
-        if self.image_selected is None:
-            showinfo(
+        if self.selected_image is None:
+            showwarning(
                 title='Nenhuma imagem selecionada',
                 message='É preciso que uma imagem seja selecionada para a realização dos cálculos dos descritores.'
             )
             return
 
-        print(self.get_descriptors_from_image(self.image_selected))
+        print(self.get_descriptors_from_image(self.selected_image))
 
     def get_descriptors_from_image(self, image):
         #Reamostrando o número de tons de cinza da imagem
@@ -265,6 +293,14 @@ class Application:
 
         # Mean of each column
         return haralick_descriptors_for_all_radii.mean(axis=0)
+
+    def classify_selected_image(self):
+        if self.selected_image is None:
+            showwarning(
+                title='Nenhuma imagem selecionada',
+                message='É preciso que uma imagem seja selecionada para a realização da classificação.'
+            )
+            return
 
 
 Application()
