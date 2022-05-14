@@ -75,6 +75,7 @@ class Application:
         self.test_descriptors = pandas.DataFrame() 
         self.test_birads = pandas.DataFrame()
         
+        self.trained = False
         self.svm_classifier = svm.SVC()
 
     # Método responsável pela abertura de página para seleção da imagem a ser 
@@ -143,6 +144,11 @@ class Application:
                 'Não é possível treinar o classificador',
                 'É necessário realizar a leitura do diretório de imagens antes de treinar o classificador.'
             )
+
+        showinfo(
+            'Treinando Classificador',
+            'Aguarde enquanto o classificador é treinado.'
+        )
 
         self.calculate_images_descriptors()
         self.generate_dataframes_csv()
@@ -258,6 +264,7 @@ class Application:
         start_fit_model = time.time()
         
         self.svm_classifier.fit(self.train_descriptors, self.train_birads)
+        self.trained = True
         
         end_fit_model = time.time()
 
@@ -298,6 +305,7 @@ class Application:
         )
         
         confusion_matrix_display.plot()
+        plt.title('Matriz de Confusão')
         plt.show()
         
     # Método responsável por apresentar descritores de Haralick para a imagem 
@@ -319,3 +327,24 @@ class Application:
                 'Nenhuma imagem selecionada',
                 'É preciso que uma imagem seja selecionada para a realização da classificação.'
             )
+
+        #Se o modelo já tiver sido treinado 
+        if self.trained:
+            image_descriptors = self.get_image_descriptors(self.selected_image)
+            image_descriptors = numpy.array(image_descriptors)
+            #image_descriptors = image_descriptors.reshape(1, -1)
+            predicted_birads = self.svm_classifier.predict(image_descriptors.reshape(1, -1))
+            print(type(predicted_birads))
+            print(predicted_birads)
+
+            
+            showinfo(
+                'Classificação da Imagem',
+                f'A imagem foi classificada como BIRADS {predicted_birads}'
+            )
+
+        else:
+            return showinfo(
+                'O modelo ainda não foi treinado',
+                'É preciso treinar o modelo antes de classificar a imagem selecionada'
+            )         
