@@ -1,3 +1,4 @@
+from email.mime import application
 from tkinter import *
 from tkinter import filedialog
 from tkinter.messagebox import showinfo, showwarning
@@ -18,6 +19,10 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
 import time
+
+from sklearn.utils import resample
+from descriptorsScreen import DescriptorsScreen
+from metricsScreen import MetricsScreen
 
 from imageDescribed import ImageDescribed
 
@@ -154,11 +159,14 @@ class Application:
         self.generate_dataframes_csv()
         self.fill_classifier_sets()
         
-        self.display_svm_train_time()
-        self.display_svm_test_time()
-        self.display_svm_classifier_accuracy()
-        
+        self.calculate_svm_train_time()
+        self.calculate_svm_test_time()
+        self.calculate_svm_classifier_accuracy()
+        self.calculate_svm_classifier_specificity()
+
         self.plot_svm_confusion_matrix()
+
+        self.display_classifier_metrics()
 
     # Método responsável pelo preenchimento dos dataframes de descritores
     # de cada BIRADS registrada.
@@ -214,6 +222,30 @@ class Application:
         resampled_image = numpy.round(numpy.array(image) / resample_ratio)
         
         return resampled_image.astype(numpy.uint8)
+
+    def resampling_shades_of_gray_interface(self):
+        if self.selected_image is None:
+            return showwarning(
+                'Nenhuma imagem selecionada',
+                'É preciso que uma imagem seja selecionada para reamostrar seu número de tons de cinza.'
+            )
+
+        self.resample_screen = Tk()
+        self.slider = Scale(self.resample_screen, from_=2, to=32, orient=HORIZONTAL)
+        self.slider.pack()
+
+        Button(self.resample_screen, text='Resample', command=self.resampling_shades_of_gray).pack() 
+
+        self.resample_screen.mainloop()               
+        #self.resample_screen = ResampleGrayScreen()
+
+    def resampling_shades_of_gray(self):
+        #resampled_image = self.get_resampled_image_shades_of_gray(self.selected_image)
+        resample_ratio = int(round(255 / self.slider.get()))
+        resampled_image = numpy.round(numpy.array(self.selected_image) / resample_ratio)
+        plt.imshow(resampled_image)
+        plt.show()
+        
         
     # Método responsável pela geração dos arquivos CSV a partir dos
     # dataframes das BIRADS gerados em passos anteriores.
@@ -260,7 +292,7 @@ class Application:
         
     # Método responsável pelo treinamento do classificador a partir das variáveis
     # de treino estabelecidas.
-    def display_svm_train_time(self):
+    def calculate_svm_train_time(self):
         start_fit_model = time.time()
         
         self.svm_classifier.fit(self.train_descriptors, self.train_birads)
@@ -268,41 +300,50 @@ class Application:
         
         end_fit_model = time.time()
 
-        fit_time = end_fit_model - start_fit_model
+        self.fit_time = end_fit_model - start_fit_model
         
-        print(fit_time)
+        print(self.fit_time)
         
     # Método responsável por testar o classificador a partir das variáveis de
     # teste estabelecidas.
-    def display_svm_test_time(self):
+    def calculate_svm_test_time(self):
         start_predict = time.time()
         
         self.predicted_birads = self.svm_classifier.predict(self.test_descriptors)
         
         end_predict = time.time()
 
-        predict_time = end_predict - start_predict
+        self.predict_time = end_predict - start_predict
         
-        print(predict_time)
+        print(self.predict_time)
       
     # Método responsável pela apresentação da acurácia da SVM.
-    def display_svm_classifier_accuracy(self):
-        accuracy = accuracy_score(self.test_birads, self.predicted_birads)
+    def calculate_svm_classifier_accuracy(self):
+        self.accuracy = accuracy_score(self.test_birads, self.predicted_birads) * 100
         
-        print(accuracy * 100)
+        print(self.accuracy)
+
+    def calculate_svm_classifier_specificity(self):
+        pass
+        #self.specificity = 
+
+    def display_classifier_metrics(self):
+        self.metrics_screen = MetricsScreen(self.fit_time, self.predict_time, self.accuracy)
         
     # Método responsável pela geração e apresentação da matriz de confusão, 
     # calculada com base nos testes aplicados ao classificador. 
     def plot_svm_confusion_matrix(self):
-        confusion_matrix_instance = confusion_matrix(
+        self.confusion_matrix_instance = confusion_matrix(
             self.test_birads, 
             self.predicted_birads, 
             labels=self.svm_classifier.classes_
         )
         confusion_matrix_display = ConfusionMatrixDisplay(
-          confusion_matrix=confusion_matrix_instance,
+          confusion_matrix=self.confusion_matrix_instance,
           display_labels=self.svm_classifier.classes_
         )
+
+        #print(confusion_matrix_instance)
         
         confusion_matrix_display.plot()
         plt.title('Matriz de Confusão')
@@ -316,8 +357,15 @@ class Application:
                 'Nenhuma imagem selecionada',
                 'É preciso que uma imagem seja selecionada para a realização dos cálculos dos descritores.'
             )
+        
+        start = time.time()        
 
-        print(self.get_image_descriptors(self.selected_image))
+        list_of_descriptors = self.get_image_descriptors(self.selected_image)
+
+        end = time.time()
+        execution_time = end - start
+
+        self.descriptors_screen = DescriptorsScreen(list_of_descriptors, execution_time)
         
     # Método responsável pela classificação da imagem selecionada pelo usuário
     # nas BIRADS disponíveis.

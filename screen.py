@@ -24,9 +24,11 @@ class Screen:
 
         self.build_file_manager()
         self.build_options()
+        self.build_resampling()
 
         self.menu_bar.add_cascade(label='Arquivo', menu=self.file_manager)
         self.menu_bar.add_cascade(label='Opções', menu=self.options)
+        self.menu_bar.add_cascade(label='Reamostragem', menu=self.resampling)
 
     # Método responsável pela construção da sessão 'Arquivo' no menu
     # principal da aplicação.
@@ -42,7 +44,7 @@ class Screen:
 
         self.file_manager.add_command(
             label='Sair',
-            command=self.root.quit
+            command=self.root.destroy
         )
 
     # Método responsável pela construção da sessão 'Opções' no menu
@@ -70,5 +72,12 @@ class Screen:
             command=self.application.get_selected_image_classification
         )
 
+    def build_resampling(self):
+        self.resampling = Menu(self.menu_bar, tearoff=0)
+
+        self.resampling.add_command(
+            label='Reamostrar tons de cinza da imagem selecionada',
+            command=self.application.resampling_shades_of_gray_interface
+        )
 
 Screen()
