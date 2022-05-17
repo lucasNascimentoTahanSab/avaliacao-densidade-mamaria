@@ -49,7 +49,7 @@ class Application:
         self.root = root
       
         self.selected_image = None
-        self.shades_of_gray = 16
+        self.shades_of_gray = 32
 
         self.birads_1_images = list()
         self.birads_2_images = list()
@@ -81,7 +81,13 @@ class Application:
         self.test_birads = pandas.DataFrame()
         
         self.trained = False
-        self.svm_classifier = svm.SVC()
+        #Hiperparâmetros para o modelo SVM
+        self.C = [0.1, 1, 10, 100, 1000]
+        self.gamma = ['scale', 'auto']
+        self.kernel = ['rbf', 'poly', 'linear']
+
+        #Melhor combinação de hiperparâmetros para o modelo SVM encontrada 
+        self.svm_classifier = svm.SVC(C=self.C[2], gamma=self.gamma[0], kernel=self.kernel[2])
 
     # Método responsável pela abertura de página para seleção da imagem a ser 
     # analisada e posicionamento da imagem na plataforma.
@@ -161,10 +167,11 @@ class Application:
         
         self.calculate_svm_train_time()
         self.calculate_svm_test_time()
-        self.calculate_svm_classifier_accuracy()
-        self.calculate_svm_classifier_specificity()
 
         self.plot_svm_confusion_matrix()
+
+        self.calculate_svm_classifier_accuracy()
+        self.calculate_svm_classifier_specificity()
 
         self.display_classifier_metrics()
 
@@ -302,7 +309,6 @@ class Application:
 
         self.fit_time = end_fit_model - start_fit_model
         
-        print(self.fit_time)
         
     # Método responsável por testar o classificador a partir das variáveis de
     # teste estabelecidas.
@@ -314,21 +320,32 @@ class Application:
         end_predict = time.time()
 
         self.predict_time = end_predict - start_predict
-        
-        print(self.predict_time)
       
-    # Método responsável pela apresentação da acurácia da SVM.
+    # Método responsável pelo cálculo da acurácia do SVM.
     def calculate_svm_classifier_accuracy(self):
         self.accuracy = accuracy_score(self.test_birads, self.predicted_birads) * 100
-        
-        print(self.accuracy)
 
+    # Método responsável pelo cálculo da especificade do SVM
     def calculate_svm_classifier_specificity(self):
-        pass
-        #self.specificity = 
+        #Cálculo dos valores verdadeiro negativo, falso positivo, falso negativo e verdadeiro positivo
+        #média das linhas sem contar os valores da diagonal principal (verdadeiros positivos)    
+        false_positive = self.confusion_matrix_instance.sum(axis=0) - numpy.diag(self.confusion_matrix_instance)  
+
+        #média das colunas sem contar os valores da diagonal principal (verdadeiros positivos)
+        false_negative = self.confusion_matrix_instance.sum(axis=1) - numpy.diag(self.confusion_matrix_instance)
+
+        #diagonal principal da matriz de confusão
+        true_positive = numpy.diag(self.confusion_matrix_instance)
+        
+        true_negative = self.confusion_matrix_instance.sum() - (false_positive + false_negative + true_positive)
+
+        #Calcula a especificade por classe
+        #Para obter a especificade para o modelo como um todo é preciso calcular a média
+        self.specificity = true_negative/(true_negative + false_positive)
+        self.specificity = self.specificity.mean(axis=0)
 
     def display_classifier_metrics(self):
-        self.metrics_screen = MetricsScreen(self.fit_time, self.predict_time, self.accuracy)
+        self.metrics_screen = MetricsScreen(self.fit_time, self.predict_time, self.accuracy, self.specificity)
         
     # Método responsável pela geração e apresentação da matriz de confusão, 
     # calculada com base nos testes aplicados ao classificador. 
@@ -342,8 +359,6 @@ class Application:
           confusion_matrix=self.confusion_matrix_instance,
           display_labels=self.svm_classifier.classes_
         )
-
-        #print(confusion_matrix_instance)
         
         confusion_matrix_display.plot()
         plt.title('Matriz de Confusão')
@@ -382,9 +397,6 @@ class Application:
             image_descriptors = numpy.array(image_descriptors)
             #image_descriptors = image_descriptors.reshape(1, -1)
             predicted_birads = self.svm_classifier.predict(image_descriptors.reshape(1, -1))
-            print(type(predicted_birads))
-            print(predicted_birads)
-
             
             showinfo(
                 'Classificação da Imagem',
