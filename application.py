@@ -49,7 +49,7 @@ class Application:
         self.root = root
       
         self.selected_image = None
-        self.shades_of_gray = 32
+        self.shades_of_gray = 16
 
         self.birads_1_images = list()
         self.birads_2_images = list()
@@ -224,11 +224,6 @@ class Application:
         return resampled_image.astype(numpy.uint8)
 
     def resampling_shades_of_gray_interface(self):
-        if self.selected_image is None:
-            return showwarning(
-                'Nenhuma imagem selecionada',
-                'É preciso que uma imagem seja selecionada para reamostrar seu número de tons de cinza.'
-            )
 
         self.resample_screen = Tk()
         self.slider = Scale(self.resample_screen, from_=2, to=32, orient=HORIZONTAL)
@@ -236,16 +231,21 @@ class Application:
 
         Button(self.resample_screen, text='Resample', command=self.resampling_shades_of_gray).pack() 
 
-        self.resample_screen.mainloop()               
+        self.resample_screen.mainloop()              
+
         #self.resample_screen = ResampleGrayScreen()
 
     def resampling_shades_of_gray(self):
         #resampled_image = self.get_resampled_image_shades_of_gray(self.selected_image)
-        resample_ratio = int(round(255 / self.slider.get()))
-        resampled_image = numpy.round(numpy.array(self.selected_image) / resample_ratio)
-        plt.imshow(resampled_image)
-        plt.show()
-        
+        self.shades_of_gray = self.slider.get()
+        if self.selected_image is not None:
+            resample_ratio = int(round(255 / self.shades_of_gray))
+            resampled_image = numpy.round(numpy.array(self.selected_image) / resample_ratio)
+            plt.imshow(resampled_image)
+            plt.show()   
+                
+        self.resample_screen.destroy()
+     
         
     # Método responsável pela geração dos arquivos CSV a partir dos
     # dataframes das BIRADS gerados em passos anteriores.
