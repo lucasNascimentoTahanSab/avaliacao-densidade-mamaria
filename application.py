@@ -241,7 +241,7 @@ class Application:
         if self.selected_image is not None:
             resample_ratio = int(round(255 / self.shades_of_gray))
             resampled_image = numpy.round(numpy.array(self.selected_image) / resample_ratio)
-            plt.imshow(resampled_image)
+            plt.imshow(resampled_image, cmap='Greys', interpolation='none')
             plt.show()   
                 
         self.resample_screen.destroy()
