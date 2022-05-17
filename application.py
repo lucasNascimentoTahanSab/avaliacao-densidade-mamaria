@@ -243,7 +243,7 @@ class Application:
         #resampled_image = self.get_resampled_image_shades_of_gray(self.selected_image)
         resample_ratio = int(round(255 / self.slider.get()))
         resampled_image = numpy.round(numpy.array(self.selected_image) / resample_ratio)
-        plt.imshow(resampled_image)
+        plt.imshow(resampled_image, cmap='Greys', interpolation='none')
         plt.show()
         
         
