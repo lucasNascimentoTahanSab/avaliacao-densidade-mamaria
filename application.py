@@ -1,4 +1,3 @@
-from email.mime import application
 from tkinter import *
 from tkinter import filedialog
 from tkinter.messagebox import showinfo, showwarning
@@ -81,12 +80,13 @@ class Application:
         self.test_birads = pandas.DataFrame()
         
         self.trained = False
-        #Hiperparâmetros para o modelo SVM
+        
+        # Hiperparâmetros para o modelo SVM
         self.C = [0.1, 1, 10, 100, 1000]
         self.gamma = ['scale', 'auto']
         self.kernel = ['rbf', 'poly', 'linear']
 
-        #Melhor combinação de hiperparâmetros para o modelo SVM encontrada 
+        # Melhor combinação de hiperparâmetros para o modelo SVM encontrada 
         self.svm_classifier = svm.SVC(C=self.C[2], gamma=self.gamma[0], kernel=self.kernel[2])
 
     # Método responsável pela abertura de página para seleção da imagem a ser 
@@ -238,12 +238,9 @@ class Application:
 
         Button(self.resample_screen, text='Resample', command=self.resampling_shades_of_gray).pack() 
 
-        self.resample_screen.mainloop()              
-
-        #self.resample_screen = ResampleGrayScreen()
+        self.resample_screen.mainloop()
 
     def resampling_shades_of_gray(self):
-        #resampled_image = self.get_resampled_image_shades_of_gray(self.selected_image)
         self.shades_of_gray = self.slider.get()
         if self.selected_image is not None:
             resample_ratio = int(round(255 / self.shades_of_gray))
@@ -325,22 +322,24 @@ class Application:
     def calculate_svm_classifier_accuracy(self):
         self.accuracy = accuracy_score(self.test_birads, self.predicted_birads) * 100
 
-    # Método responsável pelo cálculo da especificade do SVM
+    # Método responsável pelo cálculo da especificidade do SVM a partir dos valores
+    # verdadeiros negativos, falsos positivos, falsos negativos e verdadeiros positivos.
     def calculate_svm_classifier_specificity(self):
-        #Cálculo dos valores verdadeiro negativo, falso positivo, falso negativo e verdadeiro positivo
-        #média das linhas sem contar os valores da diagonal principal (verdadeiros positivos)    
+        # Média das linhas sem contar os valores da diagonal principal (verdadeiros 
+        # positivos).
         false_positive = self.confusion_matrix_instance.sum(axis=0) - numpy.diag(self.confusion_matrix_instance)  
 
-        #média das colunas sem contar os valores da diagonal principal (verdadeiros positivos)
+        # Média das colunas sem contar os valores da diagonal principal (verdadeiros 
+        # positivos).
         false_negative = self.confusion_matrix_instance.sum(axis=1) - numpy.diag(self.confusion_matrix_instance)
 
-        #diagonal principal da matriz de confusão
+        # Diagonal principal da matriz de confusão.
         true_positive = numpy.diag(self.confusion_matrix_instance)
         
         true_negative = self.confusion_matrix_instance.sum() - (false_positive + false_negative + true_positive)
 
-        #Calcula a especificade por classe
-        #Para obter a especificade para o modelo como um todo é preciso calcular a média
+        # Calcula a especificade por classe (para obter a especificidade para o modelo 
+        # como um todo é preciso calcular a média).
         self.specificity = true_negative/(true_negative + false_positive)
         self.specificity = self.specificity.mean(axis=0)
 
@@ -391,11 +390,9 @@ class Application:
                 'É preciso que uma imagem seja selecionada para a realização da classificação.'
             )
 
-        #Se o modelo já tiver sido treinado 
         if self.trained:
             image_descriptors = self.get_image_descriptors(self.selected_image)
             image_descriptors = numpy.array(image_descriptors)
-            #image_descriptors = image_descriptors.reshape(1, -1)
             predicted_birads = self.svm_classifier.predict(image_descriptors.reshape(1, -1))
             
             showinfo(
