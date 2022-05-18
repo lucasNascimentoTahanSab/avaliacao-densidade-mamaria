@@ -162,7 +162,6 @@ class Application:
         )
 
         self.calculate_images_descriptors()
-        self.generate_dataframes_csv()
         self.fill_classifier_sets()
         
         self.calculate_svm_train_time()
@@ -249,15 +248,6 @@ class Application:
             plt.show()   
                 
         self.resample_screen.destroy()
-     
-        
-    # Método responsável pela geração dos arquivos CSV a partir dos
-    # dataframes das BIRADS gerados em passos anteriores.
-    def generate_dataframes_csv(self):
-        self.birads_1_dataframe.to_csv('./descriptors/birads_1.csv', header=True, index=False)
-        self.birads_2_dataframe.to_csv('./descriptors/birads_2.csv', header=True, index=False)
-        self.birads_3_dataframe.to_csv('./descriptors/birads_3.csv', header=True, index=False)
-        self.birads_4_dataframe.to_csv('./descriptors/birads_4.csv', header=True, index=False)
         
     # Método responsável pelo preenchimento dos conjuntos de descritores e
     # classes BIRADS de treino (75%) e teste (25%).
