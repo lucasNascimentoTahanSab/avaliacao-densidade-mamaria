@@ -17,7 +17,7 @@ class Screen:
         self.root.mainloop()
 
     # Método responsável pela construção do menu principal da aplicação,
-    # com sessões de 'Arquivo' e 'Opções'.
+    # com sessões de 'Arquivo', 'Opções' e 'Reamostragem'.
     def main_menu(self):
         self.menu_bar = Menu(self.root)
         self.root.config(menu=self.menu_bar)
@@ -72,6 +72,8 @@ class Screen:
             command=self.application.get_selected_image_classification
         )
 
+    # Método responsável pela construção da sessão 'Reamostragem' no
+    # menu principal da aplicação.
     def build_resampling(self):
         self.resampling = Menu(self.menu_bar, tearoff=0)
 
@@ -79,5 +81,6 @@ class Screen:
             label='Reamostrar tons de cinza da imagem selecionada',
             command=self.application.resampling_shades_of_gray_interface
         )
+
 
 Screen()
